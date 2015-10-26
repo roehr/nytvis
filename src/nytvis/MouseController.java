@@ -32,13 +32,12 @@ public class MouseController implements MouseListener, MouseMotionListener {
 		x0 = arg0.getX();
 		y0 = arg0.getY();
 		if(arg0.getComponent()==view){
-			if(clicked){
-				clicked=false;
-			}
+			if(clicked){clicked=false;}
 			else{clicked=true;}
 			if(clicked){
 			  view.foundactiveElement(x0, y0);
-			  System.out.println("click");
+			  clicked=false;
+			  view.repaint();
 	
 			}
 			else{view.setHasactive(false);}
@@ -47,7 +46,9 @@ public class MouseController implements MouseListener, MouseMotionListener {
 		if(arg0.getComponent()==wcview){
 			
 			JLabel active = (JLabel)arg0.getComponent().getComponentAt(x0, y0).getComponentAt(x0, y0).getComponentAt(x0, y0);
-			//view.markByKeywords(active.getText());
+			wcview.checkKeyList(active.getText());
+			wcview.draw();
+			view.repaint();
 		}
 	}
 	
@@ -63,17 +64,19 @@ public class MouseController implements MouseListener, MouseMotionListener {
 	}
 
 	public void mouseReleased(MouseEvent arg0) {
-		
+		view.setToolText(arg0.getX(), arg0.getY());
+		ToolTipManager.sharedInstance().setDismissDelay(12000);
+		ToolTipManager.sharedInstance().registerComponent(view);
 	}
 
 	public void mouseDragged(MouseEvent arg0) {
-	
+
 
 	}
 
 	public void mouseMoved(MouseEvent arg0) {
 		if(arg0.getComponent()==view){
-		//view.setToolText(arg0.getX(), arg0.getY());
+		view.setToolText(arg0.getX(), arg0.getY());
 		ToolTipManager.sharedInstance().setDismissDelay(12000);
 		ToolTipManager.sharedInstance().registerComponent(view);
 		}

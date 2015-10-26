@@ -3,8 +3,19 @@ package nytvis;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
+import nytvis.wordcloud.WordCloudView;
+
 public class KeyController implements KeyListener {
 	private View view;
+	private WordCloudView wcview;
+	public WordCloudView getWcview() {
+		return wcview;
+	}
+
+	public void setWcview(WordCloudView wcview) {
+		this.wcview = wcview;
+	}
+
 	private Model model;
 
 	public View getView() {
@@ -31,13 +42,36 @@ public class KeyController implements KeyListener {
 			else{view.setSizeview(true);}
 			view.repaint();
 		}
-		if(arg0.getKeyCode() == KeyEvent.VK_D){
+		if(arg0.getKeyCode() == KeyEvent.VK_V){
+			if(view.isTimeline()){
+				view.setTimeline(false);
+			}
+			else{
+				view.setTimeline(true);
+			}
+			view.repaint();
+		}
+		if(arg0.getKeyCode() == KeyEvent.VK_D&&view.isHasactive()){
 			view.removeDeskfromTreemap();
+			view.repaint();
+		}
+		if(arg0.getKeyCode() == KeyEvent.VK_F&&view.isHasactive()){
+			view.FocusDesk();
+			view.repaint();
+		}
+		if(arg0.getKeyCode() == KeyEvent.VK_F&&!view.isHasactive()){
+			wcview.FocusKeys();
+			view.repaint();
+		}
+		if(arg0.getKeyCode() == KeyEvent.VK_D&&!view.isHasactive()){
+			wcview.removeKeys();
+			wcview.draw();
 			view.repaint();
 		}
 		if(arg0.getKeyCode() == KeyEvent.VK_R){
 			view.resetTreemap();
 			view.repaint();
+			
 		}
 	}
 

@@ -5,13 +5,10 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -41,6 +38,7 @@ public class View extends JFXPanel {
 	private boolean activeneedsupdate = false;
 	private List<ItemBoundaries> RelatedBounds = null;
 	private boolean hasrelateditems = false;
+	private boolean relatedneedsupdate= false;
 	boolean firstdraw=true;
 	HashMap<String, Color> colormap = null;
 	private int width;
@@ -61,7 +59,6 @@ public class View extends JFXPanel {
 
 	@Override
 	public void paint(Graphics g) {
-		timeline = false;
 		if (timeline) {
 			try {
 				drawTimelineView(g);
@@ -76,9 +73,18 @@ public class View extends JFXPanel {
 
 	}
 
+	public boolean isTimeline() {
+		return timeline;
+	}
+
+	public void setTimeline(boolean timeline) {
+		this.timeline = timeline;
+	}
+
 	private void findrelatedArticles(){
 		if(hasactive){
-			RelatedBounds = new ArrayList<ItemBoundaries>();
+
+			List<ItemBoundaries> bounds = new ArrayList<ItemBoundaries>();
 			Iterator<NewsDeskBoundaries> nit = NDBounds.iterator();
 			while(nit.hasNext()){
 				Iterator<ItemBoundaries> iit= nit.next().getItembounds().iterator();	
@@ -90,7 +96,7 @@ public class View extends JFXPanel {
 							Keyword a= ait.next();
 							while(kit.hasNext()){
 								if(kit.next().getValue().equals(a.getValue())){
-									RelatedBounds.add(item);
+									bounds.add(item);
 									hasrelateditems=true;
 								}
 							}
@@ -98,7 +104,10 @@ public class View extends JFXPanel {
 					}
 				}
 			}
+			RelatedBounds= bounds;
+		
 		}
+		
 	}
 
 	public boolean isSizeview() {
@@ -112,17 +121,36 @@ public class View extends JFXPanel {
 	public boolean isHasactive() {
 		return hasactive;
 	}
+	
+	public void FocusDesk(){
+		if(hasactive){
 
+			Model m= new Model();
+			Iterator<Article>mit =model.getElements().iterator();
+			while(mit.hasNext()){
+				Article art=mit.next();
+				if(art.getNewsdesk().equals(active.getArt().getNewsdesk())){
+					m.addArticle(art);
+				}
+			}
+			treemap.setModel(m);
+			treemap.squarifynd();
+			wcv.setModel(m);
+			wcv.generateKeyWords();
+			wcv.draw();
+			repaint();
+		}
+		
+	}
 	public void setHasactive(boolean hasactive) {
 		this.hasactive = hasactive;
 	}
 	public void resetTreemap(){
 		treemap.setModel(model);
 		treemap.squarifynd();
-		wcv.setModel(model);
-		wcv.generateKeyWords();
-		wcv.draw();
-		
+		wcv.reset(model);
+		hasactive=false;
+		hasrelateditems=false;
 	}
 	public void removeDeskfromTreemap(){
 		if(hasactive){
@@ -144,12 +172,12 @@ public class View extends JFXPanel {
 			wcv.setModel(treemapmodel);
 			wcv.generateKeyWords();
 			wcv.draw();
-			
+			repaint();
 		}
 	
 	}
 	private void drawTreemap(Graphics g) {
-
+		
 		Graphics2D g2D = (Graphics2D) g;
 		g2D.clearRect(0, 0, getWidth(), getHeight());
 		double w = (double) getWidth();
@@ -165,13 +193,13 @@ public class View extends JFXPanel {
 			treemap.setHeight(w);
 			treemap.squarifynd();
 			activeneedsupdate=true;
-
-		
+			relatedneedsupdate=true;
 			
 		}
 		NDBounds = treemap.getNdb();
-		if(hasrelateditems&&activeneedsupdate){
-		updateRelatedItems();}
+		if(hasrelateditems&&relatedneedsupdate){
+		updateRelatedItems();
+		relatedneedsupdate=false;}
 		Iterator<NewsDeskBoundaries> nit = NDBounds.iterator();
 		while (nit.hasNext()) {
 			
@@ -191,12 +219,12 @@ public class View extends JFXPanel {
 				if(sizeview){
 			
 				g2D.setColor(Color.GRAY);
-				g2D.drawRect((int) item.getsizeX(), (int) item.getsizeY(), (int) item.getsizeWidth(), (int) item.getsizeHeight());
+				g2D.drawRect((int) item.getSizex(), (int) item.getSizey(), (int) item.getSizewidth(), (int) item.getSizeheight());
 				//System.out.println(item.getArt().getHeadline() + ": " + item.getX() + "," + item.getY());
 				}
 				else{
 					
-					g2D.setColor(Color.GREEN);
+					g2D.setColor(Color.GRAY);
 					g2D.drawRect((int) item.getWordx(), (int) item.getWordy(), (int) item.getWordwidth(), (int) item.getWordheight());
 					//System.out.println(item.getArt().getHeadline() + ": " + item.getX() + "," + item.getY());
 					}
@@ -223,6 +251,7 @@ public class View extends JFXPanel {
 		}
 
 		if(hasrelateditems){
+			
 			drawRelatedElements(g2D);
 		}
 		if(hasactive){
@@ -231,7 +260,16 @@ public class View extends JFXPanel {
 
 	}
 	
-	public void markByKeywords(String key){
+	public boolean isHasrelateditems() {
+		return hasrelateditems;
+	}
+
+	public void setHasrelateditems(boolean hasrelateditems) {
+		this.hasrelateditems = hasrelateditems;
+	}
+
+	public void markByKeywords(List<String> keys){
+		hasactive=false;
 		ArrayList<ItemBoundaries> bounds= new ArrayList<ItemBoundaries>();
 		Iterator<NewsDeskBoundaries> nit = NDBounds.iterator();
 		while(nit.hasNext()){
@@ -240,54 +278,124 @@ public class View extends JFXPanel {
 				ItemBoundaries item = iit.next();
 				Iterator<Keyword> kit = item.getArt().getKeys().iterator();
 				while(kit.hasNext()){
-					if(kit.next().getValue().equals(key))
-					{
-						bounds.add(item);
-						hasrelateditems=true;
+					String key=kit.next().getValue();
+					Iterator<String> it=keys.iterator();
+					while(it.hasNext()){
+						if(key.equals(it.next()))
+						{
+							bounds.add(item);
+							hasrelateditems=true;
+						}
 					}
 				}
 			}
 		}
+	
 	RelatedBounds= bounds;
 	}
 
+	
 	private void updateRelatedItems() {
-		Iterator<ItemBoundaries> rit= RelatedBounds.iterator();
-		List<ItemBoundaries> newbounds = new ArrayList<ItemBoundaries>();
-		Iterator<NewsDeskBoundaries> nit=NDBounds.iterator();
-		while(nit.hasNext()){
-			Iterator<ItemBoundaries> iit= nit.next().getItembounds().iterator();
-			while(iit.hasNext()){
-				ItemBoundaries item= iit.next();
-				while(rit.hasNext()){
-					ItemBoundaries r=rit.next();
-					if(item.getArt() ==r.getArt()){
-						newbounds.add(item);
+		for(int i=0;i<RelatedBounds.size(); i++){
+			Article art= RelatedBounds.get(i).getArt();
+			Iterator<NewsDeskBoundaries> nit= NDBounds.iterator();
+			boolean found = false;
+			while(nit.hasNext()&&!found){
+				Iterator<ItemBoundaries>iit= nit.next().getItembounds().iterator();
+				while(iit.hasNext()&&!found){
+					ItemBoundaries  item = iit.next();
+					if(item.getArt().equals(art)){
+						found=true;
+						RelatedBounds.get(i).setVars(item);
 					}
+					
 				}
 			}
+			if(!found){
+				RelatedBounds.remove(i);
+			}
+			
+			
 		}
-		RelatedBounds=newbounds;
 	}
 
 	private void drawRelatedElements(Graphics2D g2D) {
-		g2D.setColor(Color.RED);
-		Iterator<ItemBoundaries> it= RelatedBounds.iterator();
-		while(it.hasNext()){
-			ItemBoundaries act= it.next();
-			if(sizeview){
-				g2D.drawRect((int) act.getsizeX(), (int) act.getsizeY(), (int) act.getsizeWidth(), (int) act.getsizeHeight());
-			}
-			else{
-				g2D.drawRect((int) act.getWordx(), (int) act.getWordy(), (int) act.getWordwidth(), (int) act.getWordheight());
+		
+	
+		if(!hasactive){
+			Iterator<ItemBoundaries> it= RelatedBounds.iterator();
+			while(it.hasNext()){
+				ItemBoundaries act= it.next();
+				if(sizeview){
+					g2D.setColor(new Color(0,0,0,20));
+					g2D.fillRect((int) act.getSizex(), (int) act.getSizey(), (int) act.getSizewidth(), (int) act.getSizeheight());
+					g2D.setColor(Color.BLACK);
+					g2D.drawRect((int) act.getSizex(), (int) act.getSizey(), (int) act.getSizewidth(), (int) act.getSizeheight());
+				}
+				else{
+					g2D.setColor(new Color(0,0,0,20));
+					g2D.fillRect((int) act.getWordx(), (int) act.getWordy(), (int) act.getWordwidth(), (int) act.getWordheight());
+					g2D.setColor(Color.BLACK);
+					g2D.drawRect((int) act.getWordx(), (int) act.getWordy(), (int) act.getWordwidth(), (int) act.getWordheight());
+				}
 			}
 		}
-	}
+		else{
+			Iterator<ItemBoundaries> it= RelatedBounds.iterator();
+			while(it.hasNext()){
+			
+					ItemBoundaries obj= it.next();
+					int counter = 0;
+					Iterator<Keyword> keywordsactive = active.getArt().getKeys().iterator();
+					while(keywordsactive.hasNext()){
+						Keyword act= keywordsactive.next();
+						Iterator<Keyword> keywordsrelated = active.getArt().getKeys().iterator();
+						while(keywordsrelated.hasNext()){
+							if(act.getValue().equals(keywordsrelated.next().getValue())){
+								counter++;
+							}
+						}
+					}
+					double alpha= (double)counter/(double)active.getArt().getKeys().size()*100;
+					g2D.setColor(new Color(150,150,150,(int)alpha));
+					if(sizeview){
+						g2D.fillRect((int) obj.getSizex(), (int) obj.getSizey(), (int) obj.getSizewidth(), (int) obj.getSizeheight());
+						g2D.setColor(Color.BLACK);
+						g2D.drawRect((int) obj.getSizex(), (int) obj.getSizey(), (int) obj.getSizewidth(), (int) obj.getSizeheight());
+						
+					}
+					else{
+						g2D.fillRect((int) obj.getWordx(), (int) obj.getWordy(), (int) obj.getWordwidth(), (int) obj.getWordheight());
+						g2D.setColor(Color.BLACK);
+						g2D.drawRect((int) obj.getWordx(), (int) obj.getWordy(), (int) obj.getWordwidth(), (int) obj.getWordheight());
+					}
+				
+			}
+			
+			//Labels need a redraw now - if there are many related articles, you won't see them anymore...
+			Iterator<NewsDeskBoundaries> nit = NDBounds.iterator();
+			while(nit.hasNext()){
+				NewsDeskBoundaries n = nit.next();
+				if(sizeview){
+					g2D.setColor(Color.BLACK);
+					g2D.drawString(n.getNd(), (int) n.getSizex(), (int) n.getSizey() + 10);
+					}
+					else{
+			
+						g2D.setColor(Color.BLACK);
+						g2D.drawString(n.getNd(), (int) n.getWordx(), (int) n.getWordy() + 10);}
+
+					
+				}
+			}
+		}
+	
+	
 
 	private void drawActiveElement(Graphics2D g2D) {
-		g2D.setColor(Color.CYAN);
+		g2D.setColor(Color.RED);
 		if(sizeview){
-			g2D.drawRect((int) active.getsizeX(), (int) active.getsizeY(), (int) active.getsizeWidth(), (int) active.getsizeHeight());
+			g2D.drawRect((int) active.getSizex(), (int) active.getSizey(), (int) active.getSizewidth(), (int) active.getSizeheight());
 		}
 		else{
 			g2D.drawRect((int) active.getWordx(), (int) active.getWordy(), (int) active.getWordwidth(), (int) active.getWordheight());
@@ -322,7 +430,6 @@ public class View extends JFXPanel {
 		g2D.clearRect(0, 0, getWidth(), getHeight());
 		double middle= (double) getHeight()/2.0;
 		int ypos = getHeight()-100;
-		System.out.println(diffDays);
 		int startx = 20;
 		int endx= getWidth()-20;
 		double length= (double)endx-(double)startx;
@@ -412,11 +519,14 @@ public class View extends JFXPanel {
 						Iterator<ItemBoundaries> it = nd.getItembounds().iterator();
 						while (it.hasNext()) {
 							ItemBoundaries item = it.next();
-							if (x > item.getsizeX() && x < (item.getsizeWidth() + item.getsizeX())) {
-								if (y > item.getsizeY() && y < (item.getsizeHeight() + item.getsizeY())) {
+							if (x > item.getSizex() && x < (item.getSizewidth() + item.getSizex())) {
+								if (y > item.getSizey() && y < (item.getSizeheight() + item.getSizey())) {
 									active= item;
 									hasactive=true;
+								
+									wcv.setmarkedlist(item);
 									findrelatedArticles();
+									
 									return true;
 									
 								}
@@ -436,7 +546,9 @@ public class View extends JFXPanel {
 								if (y > item.getWordy() && y < (item.getWordheight() + item.getWordy())) {
 									active=item;
 									hasactive=true;
+									wcv.setmarkedlist(item);
 									findrelatedArticles();
+									
 									return true;
 								}
 							}
@@ -460,8 +572,8 @@ public class View extends JFXPanel {
 						Iterator<ItemBoundaries> it = nd.getItembounds().iterator();
 						while (it.hasNext()) {
 							ItemBoundaries item = it.next();
-							if (x > item.getsizeX() && x < (item.getsizeWidth() + item.getsizeX())) {
-								if (y > item.getsizeY() && y < (item.getsizeHeight() + item.getsizeY())) {
+							if (x > item.getSizex() && x < (item.getSizewidth() + item.getSizex())) {
+								if (y > item.getSizey() && y < (item.getSizeheight() + item.getSizey())) {
 
 									String tiptext = "<html>" + item.getArt().getHeadline() + "<br>";
 									tiptext += "Date:" + item.getArt().getPublicationDate() + "<br>";
@@ -518,6 +630,11 @@ public class View extends JFXPanel {
 				}
 			}
 		}
+	}
+
+	public void recalculateArticles(Model model2) {
+		treemap= new Treemap(model2,(double)getWidth(),(double)getHeight());
+		
 	}
 	
 	

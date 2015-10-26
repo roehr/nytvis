@@ -21,6 +21,7 @@ public class Main {
     private static WordCloudView wcView= null;
     private MouseController controller= null;
     private KeyController keyController=null;
+
     public static void main(String[] args) {
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
@@ -75,12 +76,15 @@ public class Main {
 			keyController= new KeyController();
 			wcView.setModel(model);
 			wcView.addMouseListener(controller);
+			wcView.addKeyListener(keyController);
 			wcView.draw();
 			view = new View();
 			view.setWcv(wcView);
 			view.setModel(model);
+			wcView.setView(view);
 			keyController.setModel(model);
 			keyController.setView(view);
+			keyController.setWcview(wcView);
 			controller.setModel(model);
 			controller.setView(view);
 			controller.setWcview(wcView);

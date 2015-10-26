@@ -12,8 +12,8 @@ import org.json.*;
 public class HTTPRequestHandler {
 	private String apikeyart = "6b4d22e3c89d5f8aca861dbd6850a07a%3A14%3A72956643";
 	private String baseurl = "http://api.nytimes.com/svc/search/v2/articlesearch.json?";
-	private String begin = "";
-	private String end = "";
+	private String begin = "20110309";
+	private String end = "20110320";
 	private String query = "";
 	private Model model;
 	private int ERRcount=0;
@@ -26,8 +26,7 @@ public class HTTPRequestHandler {
 	}
 	
 	public void RequestLoop() throws IOException, InterruptedException, JSONException{
-		begin = "20010911";
-		end = "20010915";
+	
 		System.out.println("APIRequest");
 		model= new Model();
 		while(begin.equals(end)==false){

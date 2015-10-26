@@ -595,19 +595,19 @@ public class Treemap {
 
 		if (r.width >= r.height) {
 			for (int i = 0; i < row.size(); i++) {
-				row.get(i).setsizeX(subxoffset);
-				row.get(i).setsizeY(subyoffset);
-				row.get(i).setsizeWidth( areaWidth);
-				row.get(i).setsizeHeight( row.get(i).getSizearea() / areaWidth);
-				subyoffset +=row.get(i).getsizeHeight();
+				row.get(i).setSizex(subxoffset);
+				row.get(i).setSizey(subyoffset);
+				row.get(i).setSizewidth( areaWidth);
+				row.get(i).setSizeheight( row.get(i).getSizearea() / areaWidth);
+				subyoffset +=row.get(i).getSizeheight();
 			}
 		} else {
 			for (int i = 0; i < row.size(); i++) {
-				row.get(i).setsizeX(subxoffset);
-				row.get(i).setsizeY(subyoffset);
-				row.get(i).setsizeWidth(row.get(i).getSizearea() / areaHeight);
-				row.get(i).setsizeHeight(areaHeight);
-				subxoffset+= row.get(i).getsizeWidth();
+				row.get(i).setSizex(subxoffset);
+				row.get(i).setSizey(subyoffset);
+				row.get(i).setSizewidth(row.get(i).getSizearea() / areaHeight);
+				row.get(i).setSizeheight(areaHeight);
+				subxoffset+= row.get(i).getSizewidth();
 			}
 		}
 		

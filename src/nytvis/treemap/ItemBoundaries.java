@@ -90,34 +90,24 @@ public void setSizeArea(double area) {
 	 wordheight=(double) wh;
 	 }
 
-public double getsizeX() {
-	return sizex;
-}
-public void setsizeX(double x) {
-	this.sizex = x;
-}
-public double getsizeY() {
-	return sizey;
-}
-public void setsizeY(double y) {
-	this.sizey = y;
-}
-public double getsizeWidth() {
-	return sizewidth;
-}
-public void setsizeWidth(double width) {
-	this.sizewidth = width;
-}
-public double getsizeHeight() {
-	return sizeheight;
-}
-public void setsizeHeight(double height) {
-	this.sizeheight = height;
-}
+
 public Article getArt() {
 	return art;
 }
 public void setArt(Article art) {
 	this.art = art;
+}
+public void setVars(ItemBoundaries item) {
+	 sizex=item.getSizex();
+	 sizey=item.getSizey();
+	 sizewidth=item.getSizewidth();
+	 sizeheight=item.getSizeheight();
+	 sizearea= item.getSizearea();
+	 wordx=item.getWordx();
+	 wordy=item.getWordy();
+	 wordwidth=item.getWordwidth();
+	 wordheight=item.getWordheight();
+	 wordarea=item.getWordarea();
+	
 }
 }
