@@ -33,6 +33,12 @@ public class WordCloudView extends JScrollPane{
 	private Map<String, Integer> keys=null;
 	private Model model;
 	private Model backup;
+	public Map<String, Integer> getKeys() {
+		return keys;
+	}
+	public void setKeys(Map<String, Integer> keys) {
+		this.keys = keys;
+	}
 	private Cloud cloud = null;
 	private View view = null;
 	public View getView() {
@@ -100,7 +106,13 @@ public class WordCloudView extends JScrollPane{
         
     }
 
-    public void removeKeys(){
+    public List<String> getMarked() {
+		return marked;
+	}
+	public void setMarked(List<String> marked) {
+		this.marked = marked;
+	}
+	public void removeKeys(){
     	Model m= new Model();
     	Iterator<Article> ait= model.getElements().iterator();
     	while(ait.hasNext()){
@@ -171,7 +183,10 @@ public class WordCloudView extends JScrollPane{
 		if(marked.size()>0){
 			view.markByKeywords(marked);
 		}
-		
+		else{
+			view.setHasrelateditems(false);
+		}
+	
 	}
 	public Model getModel() {
 		return model;

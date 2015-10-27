@@ -6,6 +6,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 
 import javax.swing.JLabel;
+import javax.swing.JScrollPane;
 import javax.swing.ToolTipManager;
 
 import nytvis.wordcloud.WordCloudView;
@@ -44,9 +45,13 @@ public class MouseController implements MouseListener, MouseMotionListener {
 			view.repaint();
 		}
 		if(arg0.getComponent()==wcview){
-			
-			JLabel active = (JLabel)arg0.getComponent().getComponentAt(x0, y0).getComponentAt(x0, y0).getComponentAt(x0, y0);
+		
+		
+			JScrollPane pane=(JScrollPane)arg0.getComponent();
+			int y = pane.getVerticalScrollBar().getValue();
+			JLabel active = (JLabel)arg0.getComponent().getComponentAt(x0, y0).getComponentAt(x0, y0).getComponentAt(x0,y0+y);
 			wcview.checkKeyList(active.getText());
+			
 			wcview.draw();
 			view.repaint();
 		}
@@ -64,9 +69,10 @@ public class MouseController implements MouseListener, MouseMotionListener {
 	}
 
 	public void mouseReleased(MouseEvent arg0) {
+		if(view.isTimeline()==false){
 		view.setToolText(arg0.getX(), arg0.getY());
 		ToolTipManager.sharedInstance().setDismissDelay(12000);
-		ToolTipManager.sharedInstance().registerComponent(view);
+		ToolTipManager.sharedInstance().registerComponent(view);}
 	}
 
 	public void mouseDragged(MouseEvent arg0) {
@@ -75,11 +81,10 @@ public class MouseController implements MouseListener, MouseMotionListener {
 	}
 
 	public void mouseMoved(MouseEvent arg0) {
-		if(arg0.getComponent()==view){
+		if(view.isTimeline()==false){
 		view.setToolText(arg0.getX(), arg0.getY());
 		ToolTipManager.sharedInstance().setDismissDelay(12000);
-		ToolTipManager.sharedInstance().registerComponent(view);
-		}
+		ToolTipManager.sharedInstance().registerComponent(view);}
 	}
 
 	public void setModel(Model model) {

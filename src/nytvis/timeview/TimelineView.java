@@ -84,9 +84,9 @@ public class TimelineView  {
 			
 		}
 		
-		print();
 		
 	}
+	
 
 	
 	public Map<String, List<Pair>> getItems() {

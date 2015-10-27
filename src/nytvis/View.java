@@ -43,6 +43,7 @@ public class View extends JFXPanel {
 	HashMap<String, Color> colormap = null;
 	private int width;
 	private int height;
+	List<Pair> brusheditem=new ArrayList<Pair>();
 	private WordCloudView wcv=null;
 	public View() {
 		width=getWidth();
@@ -422,86 +423,101 @@ public class View extends JFXPanel {
 
 	private void drawTimelineView(Graphics g) throws ParseException {
 		TimelineView t = new TimelineView(model);
-		LocalDate start= t.getDatemin();
+		LocalDate start = t.getDatemin();
 		LocalDate end = t.getDatemax();
 		long diffDays = ChronoUnit.DAYS.between(start, end);
-		
+
 		Graphics2D g2D = (Graphics2D) g;
 		g2D.clearRect(0, 0, getWidth(), getHeight());
-		double middle= (double) getHeight()/2.0;
-		int ypos = getHeight()-100;
+		int ypos = getHeight() - 100;
 		int startx = 20;
-		int endx= getWidth()-20;
-		double length= (double)endx-(double)startx;
+		int endx = getWidth() - 20;
+		double length = (double) endx - (double) startx;
 		g2D.drawLine(startx, ypos, endx, ypos);
-		//now Add labels for the dates
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-		for(int i=0; i<=(int)diffDays;i++){
+		// now Add labels for the dates
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+		for (int i = 0; i <= (int) diffDays; i++) {
 			LocalDate d = start;
-			d= start.plusDays(i);
-			int x= (endx-startx)/(int)(diffDays);
-			x=startx+ i*x;
-			
-			AffineTransform at = new AffineTransform();
-		    at.setToRotation(Math.toRadians(90), x, ypos);
-		//    g2D.setTransform(at);
-			g2D.drawString(d.format(formatter), x, ypos);	
-			at.setToRotation(Math.toRadians(0), x, ypos);
-			
+			d = start.plusDays(i);
+			int x = (endx - startx) / (int) (diffDays);
+			x = startx + i * x;
+
+			g2D.drawString(d.format(formatter), x, ypos);
+
 		}
-		//now give us the data
+
 		Map<String, List<nytvis.timeview.Pair>> data = t.getItems();
-		for(String k : data.keySet()){
-			List<Pair>plist=data.get(k);
+		List<Line> markedlines = new ArrayList<Line>();
+		for (String k : data.keySet()) {
+			List<Pair> plist = data.get(k);
 			LocalDate day = start;
-			int x1= 0;
-			int x2=0;
-			int y1=0;
-			int y2=0;
-			
-			for(int i=0; i<=(int)diffDays;i++){
-				
-				x1= (endx-startx)/(int)(diffDays);
-				x1=startx+ i*x1;
-				
-				//check if there is a data for that day
-				int totalval = 0;
-				Iterator<Pair> pit= plist.iterator();
-				while(pit.hasNext()){
+			int x1 = 0;
+			int x2 = 0;
+			int y1 = 0;
+			int y2 = 0;
+			boolean brushed = false;
+			for (int i = 0; i <= (int) diffDays; i++) {
+				x1 = (endx - startx) / (int) (diffDays);
+				x1 = startx + i * x1;
+				// check for data
+				boolean found=false;
+				Iterator<Pair> pit = plist.iterator();
+				while (pit.hasNext()) {
+					Pair p = pit.next();
+					//check for Keywordmatch
+					if(hasrelateditems){
 					
-					Pair p= pit.next();
+						Iterator<String> kit =wcv.getMarked().iterator();
+						while(kit.hasNext()){
+							if(kit.next().equals(k)){
+								brushed=true;
+							}
+						}
+					
+					}
+					
 					LocalDate d = start;
-					d= start.plusDays(i);
-					if(p.getDate().equals(d)){
-						double scale = (double)p.getValue()/(double)t.getMaxval();
-						 y1 = ypos - (int)(scale*(double)(getHeight()-100));
-						totalval +=p.getValue();
-					}
-					else{
-						y1= ypos;
-					}
+					d = start.plusDays(i);
+					if (p.getDate().equals(d)) {
+						double scale = (double)(getHeight()-150.0)*(double) p.getValue() / (double) t.getMaxval();
+						System.out.println(k+" : "+(int)scale);
+					
+						y1=ypos-(int)scale;
+						found=true;
+
+					} 
+
 				}
-				if(totalval>10){
-					g2D.setColor(Color.RED);
-				}else{
-				g2D.setColor(new Color(0,0,0,20));}
-				if(i>0){
+				if(!found){
+					y1=ypos;
+				}
+
+				if (i > 0) {
+					g2D.setColor(Color.black);
 					g2D.drawLine(x1, y1, x2, y2);
+					if (brushed) {
+						Line l = new Line(x1, y1, x2, y2);
+						markedlines.add(l);
 					
-					
+					}
+
 				}
-				x2=x1;
-				y2=y1;
+
+				x2 = x1;
+				y2 = y1;
 				
 			}
-			
-			
+
 		}
-		
-		
-		
-		
+		Iterator<Line> mit=markedlines.iterator();
+		while(mit.hasNext()){
+			Line l= mit.next();
+			g2D.setColor(Color.RED);
+			g2D.drawLine(l.x1, l.y1, l.x2, l.y2);
+		}
+
 	}
+
 
 	public void setModel(Model m) {
 		model = m;
