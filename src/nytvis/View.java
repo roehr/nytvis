@@ -464,7 +464,7 @@ public class View extends JFXPanel {
 				Iterator<Pair> pit = plist.iterator();
 				while (pit.hasNext()) {
 					Pair p = pit.next();
-					//check for Keywordmatch
+					//check vfor Keywordmatch
 					if(hasrelateditems){
 					
 						Iterator<String> kit =wcv.getMarked().iterator();
