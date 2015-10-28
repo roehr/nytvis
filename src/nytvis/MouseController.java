@@ -1,6 +1,5 @@
 package nytvis;
 
-import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -33,16 +32,24 @@ public class MouseController implements MouseListener, MouseMotionListener {
 		x0 = arg0.getX();
 		y0 = arg0.getY();
 		if(arg0.getComponent()==view){
-			if(clicked){clicked=false;}
-			else{clicked=true;}
+			
+		if(view.isTimeline()==false){
+			
 			if(clicked){
 			  view.foundactiveElement(x0, y0);
 			  clicked=false;
-			  view.repaint();
+			
 	
 			}
-			else{view.setHasactive(false);}
+			else{view.setHasactive(false);
+			view.setHasrelateditems(false);
+			clicked=true;}
 			view.repaint();
+		}
+		else{
+			view.checkforLinehit(x0, y0);
+			view.repaint();
+		}
 		}
 		if(arg0.getComponent()==wcview){
 		
@@ -71,9 +78,14 @@ public class MouseController implements MouseListener, MouseMotionListener {
 	public void mouseReleased(MouseEvent arg0) {
 		if(view.isTimeline()==false){
 		view.setToolText(arg0.getX(), arg0.getY());
+		ToolTipManager.sharedInstance().setEnabled(true);
 		ToolTipManager.sharedInstance().setDismissDelay(12000);
 		ToolTipManager.sharedInstance().registerComponent(view);}
+		else{
+			ToolTipManager.sharedInstance().setEnabled(false);
+		}
 	}
+
 
 	public void mouseDragged(MouseEvent arg0) {
 
@@ -83,8 +95,12 @@ public class MouseController implements MouseListener, MouseMotionListener {
 	public void mouseMoved(MouseEvent arg0) {
 		if(view.isTimeline()==false){
 		view.setToolText(arg0.getX(), arg0.getY());
+		ToolTipManager.sharedInstance().setEnabled(true);
 		ToolTipManager.sharedInstance().setDismissDelay(12000);
 		ToolTipManager.sharedInstance().registerComponent(view);}
+		else{
+			ToolTipManager.sharedInstance().setEnabled(false);
+		}
 	}
 
 	public void setModel(Model model) {

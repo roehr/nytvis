@@ -3,7 +3,11 @@ package nytvis;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Line2D;
+import java.awt.geom.Rectangle2D;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -30,6 +34,7 @@ public class View extends JFXPanel {
 	private static final long serialVersionUID = 1L;
 	private Model model = null;
 	private Treemap treemap=null;
+	private List<Line> timelines = null;
 	private List<NewsDeskBoundaries> NDBounds = null;
 	private boolean sizeview = false;
 	private boolean timeline = false;
@@ -42,6 +47,7 @@ public class View extends JFXPanel {
 	boolean firstdraw=true;
 	HashMap<String, Color> colormap = null;
 	private int width;
+	private List<Line> markedlines = new ArrayList<Line>();
 	private int height;
 	List<Pair> brusheditem=new ArrayList<Pair>();
 	private WordCloudView wcv=null;
@@ -139,6 +145,7 @@ public class View extends JFXPanel {
 			wcv.setModel(m);
 			wcv.generateKeyWords();
 			wcv.draw();
+			recalculatemarkedArticles();
 			repaint();
 		}
 		
@@ -170,6 +177,7 @@ public class View extends JFXPanel {
 			
 			treemap.setModel(treemapmodel);
 			treemap.squarifynd();
+			hasrelateditems=false;
 			wcv.setModel(treemapmodel);
 			wcv.generateKeyWords();
 			wcv.draw();
@@ -177,6 +185,31 @@ public class View extends JFXPanel {
 		}
 	
 	}
+	private void recalculatemarkedArticles() {
+		//recheck if all related Articles still exist
+		NDBounds= treemap.getNdb();
+		Iterator<ItemBoundaries>iit=RelatedBounds.iterator();
+		List<ItemBoundaries> newrels= new ArrayList<ItemBoundaries>();
+		while(iit.hasNext()){
+			ItemBoundaries activemark= iit.next();
+			Iterator<NewsDeskBoundaries>nit = NDBounds.iterator();
+			while(nit.hasNext()){
+				NewsDeskBoundaries nd= nit.next();
+				if(activemark.getArt().getNewsdesk().equals(nd.getNd())){
+					Iterator<ItemBoundaries> ndiit= nd.getItembounds().iterator();
+					while(ndiit.hasNext()){
+						ItemBoundaries nditem =ndiit.next();
+						if(nditem.getArt().equals(activemark.getArt())){
+							newrels.add(nditem);
+						}
+					}
+				}
+			}
+		}
+		RelatedBounds=newrels;
+		relatedneedsupdate=true;
+	}
+
 	private void drawTreemap(Graphics g) {
 		
 		Graphics2D g2D = (Graphics2D) g;
@@ -422,7 +455,7 @@ public class View extends JFXPanel {
 	}
 
 	private void drawTimelineView(Graphics g) throws ParseException {
-		TimelineView t = new TimelineView(model);
+		TimelineView t = new TimelineView(treemap.getModel());
 		LocalDate start = t.getDatemin();
 		LocalDate end = t.getDatemax();
 		long diffDays = ChronoUnit.DAYS.between(start, end);
@@ -442,12 +475,12 @@ public class View extends JFXPanel {
 			int x = (endx - startx) / (int) (diffDays);
 			x = startx + i * x;
 
-			g2D.drawString(d.format(formatter), x, ypos);
+			g2D.drawString(d.format(formatter), x, ypos+12);
 
 		}
-
+		timelines=new ArrayList<Line>();
 		Map<String, List<nytvis.timeview.Pair>> data = t.getItems();
-		List<Line> markedlines = new ArrayList<Line>();
+		
 		for (String k : data.keySet()) {
 			List<Pair> plist = data.get(k);
 			LocalDate day = start;
@@ -495,8 +528,11 @@ public class View extends JFXPanel {
 				if (i > 0) {
 					g2D.setColor(Color.black);
 					g2D.drawLine(x1, y1, x2, y2);
+					Line l = new Line(k,x1, y1, x2, y2);
+					timelines.add(l);
+					
 					if (brushed) {
-						Line l = new Line(x1, y1, x2, y2);
+					
 						markedlines.add(l);
 					
 					}
@@ -510,14 +546,68 @@ public class View extends JFXPanel {
 
 		}
 		Iterator<Line> mit=markedlines.iterator();
+		List<Line> lines = new ArrayList<Line>();
 		while(mit.hasNext()){
-			Line l= mit.next();
-			g2D.setColor(Color.RED);
+			String name= mit.next().text;
+			Iterator<Line> tit=timelines.iterator();
+			wcv.checkKeyList(name);
+			while(tit.hasNext()){
+				Line currline= tit.next();
+				if(currline.text.equals(name)){
+					lines.add(currline);
+				}
+			}
+		}
+		markedlines=lines;
+		wcv.draw();
+	
+		Iterator<Line>mit2=markedlines.iterator();
+		while(mit2.hasNext()){
+			Line l=mit2.next();
+			g2D.setColor(Color.red);
 			g2D.drawLine(l.x1, l.y1, l.x2, l.y2);
 		}
-
+		markedlines.clear();
 	}
 
+	public void checkforLinehit(int x, int y){
+
+		Iterator<Line> lit= timelines.iterator();
+		while(lit.hasNext()){
+			Line line=lit.next();
+			if(intersect(x,y,line)){
+				markedlines.add(line);
+			}
+			
+			
+		}
+		
+		
+	}
+
+	private boolean intersect(int xin, int yin, Line line) {
+		float minX= (float)xin;
+		float maxX= (float)xin+4.0f;
+		float minY = (float)yin;
+		float maxY= (float)yin+4;
+		float x1= (float)line.x1;
+		float x2=(float)line.x2;
+		float y1=(float)line.y1;
+		float y2=(float)line.y2;
+		    if ((x1 <= minX && x2 <= minX) || (y1 <= minY && y2 <= minY) || (x1 >= maxX && x2 >= maxX) || (y1 >= maxY && y2 >= maxY))
+		        return false;
+		    float m = (y2 - y1) / (x2 - x1);
+		    float y = m * (minX - x1) + y1;
+		    if (y > minY && y < maxY) return true;
+		    y = m * (maxX - x1) + y1;
+		    if (y > minY && y < maxY) return true;
+		    float x = (minY - y1) / m + x1;
+		    if (x > minX && x < maxX) return true;
+		    x = (maxY - y1) / m + x1;
+		    if (x > minX && x < maxX) return true;
+		    return false;
+		
+	}
 
 	public void setModel(Model m) {
 		model = m;
@@ -650,7 +740,7 @@ public class View extends JFXPanel {
 
 	public void recalculateArticles(Model model2) {
 		treemap= new Treemap(model2,(double)getWidth(),(double)getHeight());
-		
+		recalculatemarkedArticles();
 	}
 	
 	
