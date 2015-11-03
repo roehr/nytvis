@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Iterator;
 
 import org.json.*;
 
@@ -44,7 +45,7 @@ public class HTTPRequestHandler {
 		System.out.println("Total Words: " + model.getTotalWords());
 		model.NewsDeskListing();
 	}
-
+ 
 	public void MakeRequest() throws IOException, InterruptedException, JSONException {
 		
 
@@ -194,7 +195,24 @@ public class HTTPRequestHandler {
 
 	public Model getModel() {
 		if(model!= null){
-			return model;
+			Model m = new Model();
+			Iterator<Article> ait= model.getElements().iterator();
+			while(ait.hasNext()){
+				boolean found=false;
+				Article a = ait.next();
+				Iterator<Article> mait=m.getElements().iterator();
+				while(mait.hasNext()){
+					if(mait.next().getHeadline().equals(a.getHeadline())){
+						found=true;
+						break;
+					}
+				}
+				if(found==false){
+					m.addArticle(a);
+				}
+			}
+			
+			return m;
 		}
 		return null;
 	}

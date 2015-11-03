@@ -44,7 +44,7 @@ public class View extends JFXPanel {
 	private boolean hasactive = false;
 	private boolean activeneedsupdate = false;
 	private boolean hidecolors=false;
-	private List<ItemBoundaries> RelatedBounds = null;
+	private List<ItemBoundaries> RelatedBounds = new ArrayList<ItemBoundaries>();
 	private boolean hasrelateditems = false;
 	private boolean relatedneedsupdate= false;
 	boolean firstdraw=true;
@@ -52,6 +52,7 @@ public class View extends JFXPanel {
 	private int width;
 	private List<Line> markedlines = new ArrayList<Line>();
 	private int height;
+	boolean stackupdate=true;
 	List<Pair> brusheditem=new ArrayList<Pair>();
 	private WordCloudView wcv=null;
 	public View() {
@@ -497,17 +498,39 @@ public class View extends JFXPanel {
 		int width = getWidth() - 30;
 		int height=getHeight()-150;
 		//stackview only uses marked items
-		Model m = new Model();
-		Iterator<ItemBoundaries> iit = RelatedBounds.iterator();
-		while( iit.hasNext()){
-			m.addArticle(iit.next().getArt());
-		}
-	    s=new Stack(m,wcv,startx,ypos,width,height);
+		
+			Model m = new Model();
+			Iterator<ItemBoundaries> iit = RelatedBounds.iterator();
+			
+			while( iit.hasNext()){
+				Article a=iit.next().getArt();
+				Iterator<Article> ait= m.getElements().iterator();
+				boolean found = false;
+				while(ait.hasNext()){
+					if(ait.next().getHeadline().equals(a.getHeadline())){
+						found=true;
+						break;
+					}
+				}
+				if(found==false){
+					m.addArticle(a);
+				}
+			}
+		    s=new Stack(m,wcv,startx,ypos,width,height);
+		
 		Graphics2D g2D = (Graphics2D) g;
 		g2D.clearRect(0, 0, getWidth(), getHeight());
-		g2D.drawLine(startx, ypos, startx+width, ypos);
+		for(int i= 0; i<s.getMaxvalue();i++){
+			if(i%2==0){
+			g2D.drawString(Integer.toString(i), s.getStartx(), s.getStarty()-i*s.getHeight()/s.getMaxvalue());}
+		}
+		int i=0;
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 		
 		for(LocalDate k : s.getStack().keySet()){
+			g2D.setColor(Color.BLACK);
+			g2D.drawString(k.format(formatter), s.getStartx()+i*s.getWidth()/s.getStack().size(), s.getStarty()+10);
+			i++;
 			Iterator<Stackitem> stit=s.getStack().get(k).iterator();
 			while(stit.hasNext()){
 				Stackitem sitem= stit.next();
@@ -525,6 +548,9 @@ public class View extends JFXPanel {
 				for(String nd: sitem.getValuesperDesk().keySet()){
 					g2D.setColor(colormap.get(nd));
 					g2D.fillRect(sitem.getX1(), sitem.getValuesperDesk().get(nd).getY2(), sitem.getX2()-sitem.getX1(), sitem.getValuesperDesk().get(nd).getY1()-sitem.getValuesperDesk().get(nd).getY2());
+					g2D.setColor(new Color(0,0,0,20));
+					g2D.drawRect(sitem.getX1(), sitem.getValuesperDesk().get(nd).getY2(), sitem.getX2()-sitem.getX1(), sitem.getValuesperDesk().get(nd).getY1()-sitem.getValuesperDesk().get(nd).getY2());
+					
 				}
 			}
 		}
@@ -853,7 +879,7 @@ public class View extends JFXPanel {
 										
 											for(String nd : si.getValuesperDesk().keySet()){
 												StackNDentry ndentry=si.getValuesperDesk().get(nd);
-												System.out.println(y+":"+ndentry.getY1()+","+ndentry.getY2());
+												
 												if(y>ndentry.getY2()&&y<ndentry.getY1()){
 												
 													String tiptext = "<html>" +ndentry.getNewsdesk() + "<br>";

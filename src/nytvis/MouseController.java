@@ -50,7 +50,7 @@ public class MouseController implements MouseListener, MouseMotionListener {
 		}
 		else{
 			
-			//view.checkforLinehit(x0, y0);
+			view.checkforLinehit(x0, y0);
 			wcview.draw();
 			 
 			view.repaint();
@@ -81,14 +81,9 @@ public class MouseController implements MouseListener, MouseMotionListener {
 	}
 
 	public void mouseReleased(MouseEvent arg0) {
-		if(view.isTimeline()==false){
 		view.setToolText(arg0.getX(), arg0.getY());
-		ToolTipManager.sharedInstance().setEnabled(true);
 		ToolTipManager.sharedInstance().setDismissDelay(12000);
-		ToolTipManager.sharedInstance().registerComponent(view);}
-		else{
-			ToolTipManager.sharedInstance().setEnabled(false);
-		}
+		ToolTipManager.sharedInstance().registerComponent(view);
 	}
 
 
