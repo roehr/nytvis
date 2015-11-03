@@ -3,11 +3,6 @@ package nytvis;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Line2D;
-import java.awt.geom.Rectangle2D;
 import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -19,7 +14,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import javax.swing.ToolTipManager;
+
 import javafx.embed.swing.JFXPanel;
+import nytvis.stack.Stack;
+import nytvis.stack.StackNDentry;
+import nytvis.stack.Stackitem;
 import nytvis.timeview.Pair;
 import nytvis.timeview.TimelineView;
 import nytvis.treemap.ItemBoundaries;
@@ -31,7 +31,9 @@ public class View extends JFXPanel {
 	/**
 	* 
 	*/
+	private boolean stackview = false;
 	private static final long serialVersionUID = 1L;
+	private Stack s;
 	private Model model = null;
 	private Treemap treemap=null;
 	private List<Line> timelines = null;
@@ -41,6 +43,7 @@ public class View extends JFXPanel {
 	private ItemBoundaries active = null;
 	private boolean hasactive = false;
 	private boolean activeneedsupdate = false;
+	private boolean hidecolors=false;
 	private List<ItemBoundaries> RelatedBounds = null;
 	private boolean hasrelateditems = false;
 	private boolean relatedneedsupdate= false;
@@ -67,17 +70,39 @@ public class View extends JFXPanel {
 	@Override
 	public void paint(Graphics g) {
 		if (timeline) {
+			if(stackview){
+				drawStackview(g);
+			}
+			else{
 			try {
+				ToolTipManager.sharedInstance().setEnabled(false);
 				drawTimelineView(g);
 			} catch (ParseException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			}
+			}}
 		} else {
+	
 			drawTreemap(g);
 			
 		}
 
+	}
+
+	public boolean isStackview() {
+		return stackview;
+	}
+
+	public void setStackview(boolean stackview) {
+		this.stackview = stackview;
+	}
+
+	public List<Line> getTimelines() {
+		return timelines;
+	}
+
+	public void setTimelines(List<Line> timelines) {
+		this.timelines = timelines;
 	}
 
 	public boolean isTimeline() {
@@ -142,11 +167,11 @@ public class View extends JFXPanel {
 			}
 			treemap.setModel(m);
 			treemap.squarifynd();
+			NDBounds=treemap.getNdb();
 			wcv.setModel(m);
 			wcv.generateKeyWords();
 			wcv.draw();
 			recalculatemarkedArticles();
-			repaint();
 		}
 		
 	}
@@ -177,6 +202,7 @@ public class View extends JFXPanel {
 			
 			treemap.setModel(treemapmodel);
 			treemap.squarifynd();
+			NDBounds=treemap.getNdb();
 			hasrelateditems=false;
 			wcv.setModel(treemapmodel);
 			wcv.generateKeyWords();
@@ -187,7 +213,6 @@ public class View extends JFXPanel {
 	}
 	private void recalculatemarkedArticles() {
 		//recheck if all related Articles still exist
-		NDBounds= treemap.getNdb();
 		Iterator<ItemBoundaries>iit=RelatedBounds.iterator();
 		List<ItemBoundaries> newrels= new ArrayList<ItemBoundaries>();
 		while(iit.hasNext()){
@@ -267,7 +292,9 @@ public class View extends JFXPanel {
 			
 			if(sizeview){
 			//g2D.clearRect((int) n.getSizex(), (int) n.getSizey(), (int) n.getSizewidth(), (int) n.getSizeheight());
-			g2D.setColor(colormap.get(n.getNd()));
+			if(hidecolors==false){
+				g2D.setColor(colormap.get(n.getNd()));}
+			else{g2D.setColor(new Color(255,255,255,30));}
 			g2D.fillRect((int) n.getSizex(), (int) n.getSizey(), (int) n.getSizewidth(), (int) n.getSizeheight());
 			g2D.setColor(Color.BLACK);
 			g2D.drawString(n.getNd(), (int) n.getSizex(), (int) n.getSizey() + 10);
@@ -275,7 +302,9 @@ public class View extends JFXPanel {
 			}
 			else{
 				//g2D.clearRect((int) n.getWordx(), (int) n.getWordy(), (int) n.getWordwidth(), (int) n.getWordheight());
-				g2D.setColor(colormap.get(n.getNd()));
+				if(hidecolors==false){
+					g2D.setColor(colormap.get(n.getNd()));}
+				else{g2D.setColor(new Color(255,255,255,30));}
 				g2D.fillRect((int) n.getWordx(), (int) n.getWordy(), (int) n.getWordwidth(), (int) n.getWordheight());
 				g2D.setColor(Color.BLACK);
 				g2D.drawRect((int) n.getWordx(), (int) n.getWordy(), (int) n.getWordwidth(), (int) n.getWordheight());
@@ -294,6 +323,14 @@ public class View extends JFXPanel {
 
 	}
 	
+	public boolean isHidecolors() {
+		return hidecolors;
+	}
+
+	public void setHidecolors(boolean hidecolors) {
+		this.hidecolors = hidecolors;
+	}
+
 	public boolean isHasrelateditems() {
 		return hasrelateditems;
 	}
@@ -437,9 +474,10 @@ public class View extends JFXPanel {
 		
 	}
 
-	private void generateColors() {
+	public void generateColors() {
 		//There can be up to 110 different NewsDesks... no matter the Colors, this will always look weird
 		//We go for random colors now and make them transparent so it won't hurt the eye too much
+		//Bad solution still - this is asking for bad results...
 		colormap= new HashMap<String,Color>();
 		Iterator<NewsDeskBoundaries> nit = treemap.getNdb().iterator();
 		while(nit.hasNext()){
@@ -453,7 +491,47 @@ public class View extends JFXPanel {
 		}
 		
 	}
-
+	private void drawStackview(Graphics g){
+		int ypos = getHeight() - 100;
+		int startx = 20;
+		int width = getWidth() - 30;
+		int height=getHeight()-150;
+		//stackview only uses marked items
+		Model m = new Model();
+		Iterator<ItemBoundaries> iit = RelatedBounds.iterator();
+		while( iit.hasNext()){
+			m.addArticle(iit.next().getArt());
+		}
+	    s=new Stack(m,wcv,startx,ypos,width,height);
+		Graphics2D g2D = (Graphics2D) g;
+		g2D.clearRect(0, 0, getWidth(), getHeight());
+		g2D.drawLine(startx, ypos, startx+width, ypos);
+		
+		for(LocalDate k : s.getStack().keySet()){
+			Iterator<Stackitem> stit=s.getStack().get(k).iterator();
+			while(stit.hasNext()){
+				Stackitem sitem= stit.next();
+				g2D.setColor(Color.BLACK);
+				//check if keyword needs to be marked
+				Iterator<String> mit= wcv.getMarked().iterator();
+				while(mit.hasNext()){
+					if(mit.next().equals(sitem.getKeyword())){
+						g2D.setColor(Color.RED);
+						break;
+					}
+				}
+				
+				g2D.drawRect(sitem.getX1(), sitem.getY2(), sitem.getX2()-sitem.getX1(),sitem.getY1()-sitem.getY2());
+				for(String nd: sitem.getValuesperDesk().keySet()){
+					g2D.setColor(colormap.get(nd));
+					g2D.fillRect(sitem.getX1(), sitem.getValuesperDesk().get(nd).getY2(), sitem.getX2()-sitem.getX1(), sitem.getValuesperDesk().get(nd).getY1()-sitem.getValuesperDesk().get(nd).getY2());
+				}
+			}
+		}
+		
+		
+		
+	}
 	private void drawTimelineView(Graphics g) throws ParseException {
 		TimelineView t = new TimelineView(treemap.getModel());
 		LocalDate start = t.getDatemin();
@@ -472,12 +550,23 @@ public class View extends JFXPanel {
 		for (int i = 0; i <= (int) diffDays; i++) {
 			LocalDate d = start;
 			d = start.plusDays(i);
-			int x = (endx - startx) / (int) (diffDays);
+			int x=0;
+		    if(diffDays>0.0){
+			x = (endx - startx) / (int) (diffDays);}
+		   
 			x = startx + i * x;
 
 			g2D.drawString(d.format(formatter), x, ypos+12);
 
 		}
+		//y-axis:
+		g2D.drawLine(startx, ypos, startx, (getHeight()-150));
+		for(int i = 1; i<=t.getMaxval();i++){
+			double scale = (double)(getHeight()-150.0)*i / (double) t.getMaxval();
+			int y=ypos-(int)scale;
+			g2D.drawString(Integer.toString(i), startx, y);
+		}
+		
 		timelines=new ArrayList<Line>();
 		Map<String, List<nytvis.timeview.Pair>> data = t.getItems();
 		
@@ -490,14 +579,16 @@ public class View extends JFXPanel {
 			int y2 = 0;
 			boolean brushed = false;
 			for (int i = 0; i <= (int) diffDays; i++) {
-				x1 = (endx - startx) / (int) (diffDays);
+				x1=0;
+				if((int)diffDays>0){
+				x1 = (endx - startx) / (int) (diffDays);}
 				x1 = startx + i * x1;
 				// check for data
 				boolean found=false;
 				Iterator<Pair> pit = plist.iterator();
 				while (pit.hasNext()) {
 					Pair p = pit.next();
-					//check vfor Keywordmatch
+					//check for Keywordmatch
 					if(hasrelateditems){
 					
 						Iterator<String> kit =wcv.getMarked().iterator();
@@ -513,7 +604,7 @@ public class View extends JFXPanel {
 					d = start.plusDays(i);
 					if (p.getDate().equals(d)) {
 						double scale = (double)(getHeight()-150.0)*(double) p.getValue() / (double) t.getMaxval();
-						System.out.println(k+" : "+(int)scale);
+						
 					
 						y1=ypos-(int)scale;
 						found=true;
@@ -526,7 +617,7 @@ public class View extends JFXPanel {
 				}
 
 				if (i > 0) {
-					g2D.setColor(Color.black);
+					g2D.setColor(new Color(0,0,0,20));
 					g2D.drawLine(x1, y1, x2, y2);
 					Line l = new Line(k,x1, y1, x2, y2);
 					timelines.add(l);
@@ -559,12 +650,13 @@ public class View extends JFXPanel {
 			}
 		}
 		markedlines=lines;
-		wcv.draw();
+	
 	
 		Iterator<Line>mit2=markedlines.iterator();
 		while(mit2.hasNext()){
 			Line l=mit2.next();
-			g2D.setColor(Color.red);
+			g2D.setColor(new Color(255,0,0,20));
+			
 			g2D.drawLine(l.x1, l.y1, l.x2, l.y2);
 		}
 		markedlines.clear();
@@ -572,11 +664,13 @@ public class View extends JFXPanel {
 
 	public void checkforLinehit(int x, int y){
 
+		
 		Iterator<Line> lit= timelines.iterator();
 		while(lit.hasNext()){
 			Line line=lit.next();
 			if(intersect(x,y,line)){
-				markedlines.add(line);
+				wcv.checkKeyList(line.text);
+				
 			}
 			
 			
@@ -667,7 +761,8 @@ public class View extends JFXPanel {
 	}
 
 	public void setToolText(int x, int y) {
-	
+	if(!timeline){
+
 		Iterator<NewsDeskBoundaries> nit = NDBounds.iterator();
 		while (nit.hasNext()) {
 			NewsDeskBoundaries nd = nit.next();
@@ -696,6 +791,8 @@ public class View extends JFXPanel {
 									tiptext += "</html>";
 
 									setToolTipText(tiptext);
+									ToolTipManager.sharedInstance().setEnabled(true);
+									return;
 								
 								}
 							}
@@ -704,6 +801,7 @@ public class View extends JFXPanel {
 				}
 			}
 			else{
+				
 				if (x > nd.getWordx() && x < (nd.getWordwidth() + nd.getWordx())) {
 					if (y > nd.getWordy() && y < (nd.getWordheight() + nd.getWordy())) {
 
@@ -728,7 +826,8 @@ public class View extends JFXPanel {
 									tiptext += "</html>";
 
 									setToolTipText(tiptext);
-									
+									ToolTipManager.sharedInstance().setEnabled(true);
+									return;
 								}
 							}
 						}
@@ -737,10 +836,60 @@ public class View extends JFXPanel {
 			}
 		}
 	}
+	else{
+		 if(stackview&&timeline){
+		
+				{ 	
+					if (x>s.getStartx()&&x<s.getWidth()+s.getStartx()){
+					
+						if(y <s.getStarty()&&y>s.getStarty()-s.getHeight()){
+							for(LocalDate d : s.getStack().keySet()){
+								Iterator<Stackitem> sit = s.getStack().get(d).iterator();
+								while(sit.hasNext()){
+									Stackitem si= sit.next();
+									if(si.getX1()<x &&si.getX2()>x){
+									
+									  if(y<si.getY1()&&y>si.getY2()){
+										
+											for(String nd : si.getValuesperDesk().keySet()){
+												StackNDentry ndentry=si.getValuesperDesk().get(nd);
+												System.out.println(y+":"+ndentry.getY1()+","+ndentry.getY2());
+												if(y>ndentry.getY2()&&y<ndentry.getY1()){
+												
+													String tiptext = "<html>" +ndentry.getNewsdesk() + "<br>";
+													tiptext += "Keyword"+si.getKeyword() + "<br>";
+													tiptext += "Appearance:" +ndentry.getValue() + "<br>";
+													tiptext += "</html>";
+
+													setToolTipText(tiptext);
+													ToolTipManager.sharedInstance().setEnabled(true);
+													return;
+												}
+												
+											}
+									  }
+									}
+								}
+							}
+						}
+					}
+					
+				}
+			}
+	}
+	ToolTipManager.sharedInstance().setEnabled(false);
+	}
+	
+	public void setstacktooltext(int x, int y){
+
+	}
 
 	public void recalculateArticles(Model model2) {
 		treemap= new Treemap(model2,(double)getWidth(),(double)getHeight());
 		recalculatemarkedArticles();
+		treemap.squarifynd();
+		NDBounds=treemap.getNdb();
+		repaint();
 	}
 	
 	

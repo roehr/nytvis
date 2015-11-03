@@ -40,6 +40,12 @@ public class WordCloudView extends JScrollPane{
 		this.keys = keys;
 	}
 	private Cloud cloud = null;
+	public Cloud getCloud() {
+		return cloud;
+	}
+	public void setCloud(Cloud cloud) {
+		this.cloud = cloud;
+	}
 	private View view = null;
 	public View getView() {
 		return view;
@@ -57,8 +63,7 @@ public class WordCloudView extends JScrollPane{
     	//panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
     	panel.setLayout(new FlowLayout(FlowLayout.TRAILING,5,5));
        	cloud= new Cloud();
-       	cloud.setTagCase(Case.CASE_SENSITIVE);
-       	
+       	cloud.setTagCase(Case.CASE_SENSITIVE);       	
       
        
         generateKeyWords();
@@ -98,10 +103,10 @@ public class WordCloudView extends JScrollPane{
         
         this.add(panel);
     
-         panel.setPreferredSize(new Dimension(400,keys.size()*10));
+         panel.setPreferredSize(new Dimension(300,keys.size()*10));
          this.setViewportView(panel);
          this.setAutoscrolls(true);
-         this.setPreferredSize(new Dimension( 400,700));
+         this.setPreferredSize(new Dimension( 350,700));
         
         
     }
@@ -134,10 +139,11 @@ public class WordCloudView extends JScrollPane{
     			m.addArticle(art);
     		}
     	}
+    	view.setHasrelateditems(false);
     	marked.clear();
     	model=m;
-    	view.recalculateArticles(model);
     	generateKeyWords();
+    
     }
     
 	public void generateKeyWords() {
@@ -219,10 +225,6 @@ public class WordCloudView extends JScrollPane{
 		
 	}
 	public void FocusKeys() {
-		if(marked.size()==0){
-			return;
-		}
-		System.out.println("HERE");
 		Model m= new Model();
     	Iterator<Article> ait= model.getElements().iterator();
     	while(ait.hasNext()){
@@ -242,7 +244,7 @@ public class WordCloudView extends JScrollPane{
     		
     	}
     	model=m;
-    	draw();
     	view.recalculateArticles(model);
+    	view.repaint();
 	}
 }

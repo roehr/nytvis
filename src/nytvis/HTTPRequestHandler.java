@@ -94,8 +94,8 @@ public class HTTPRequestHandler {
 				int j = 0;
 				while(j<arr.getJSONObject(i).getJSONArray("keywords").length()){
 					
-					String name= arr.getJSONObject(i).getJSONArray("keywords").getJSONObject(j).getString("name");;
-					String value =arr.getJSONObject(i).getJSONArray("keywords").getJSONObject(j).getString("value");;
+					String name= arr.getJSONObject(i).getJSONArray("keywords").getJSONObject(j).getString("name");
+					String value =arr.getJSONObject(i).getJSONArray("keywords").getJSONObject(j).getString("value");
 					art.addKey(name, value);
 					j++;
 				}
@@ -104,7 +104,8 @@ public class HTTPRequestHandler {
 				success = false;
 				ERRcount++;
 				i++;
-				e.printStackTrace();
+				//e.printStackTrace();
+				System.out.println("Error with this JSONResponse. Skipping Article...");
 				continue;
 			}
 			if (success) {

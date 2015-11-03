@@ -42,6 +42,14 @@ public class KeyController implements KeyListener {
 			else{view.setSizeview(true);}
 			view.repaint();
 		}
+		if(arg0.getKeyCode() == KeyEvent.VK_N){
+			if(view.isStackview()){
+				view.setStackview(false);
+			}
+			else{view.setStackview(true);
+			   }
+			view.repaint();
+		}
 		if(arg0.getKeyCode() == KeyEvent.VK_V){
 			if(view.isTimeline()){
 				view.setTimeline(false);
@@ -56,22 +64,49 @@ public class KeyController implements KeyListener {
 			view.repaint();
 		}
 		if(arg0.getKeyCode() == KeyEvent.VK_F&&view.isHasactive()){
+			if(!view.isTimeline()){
 			view.FocusDesk();
-			view.repaint();
+			view.repaint();}
+			else{
+				wcview.FocusKeys();
+				if(view.isHasrelateditems()){
+					view.setHasrelateditems(false);
+				}
+				view.recalculateArticles(wcview.getModel());
+		    	view.repaint();
+		    	wcview.draw();
+			}
 		}
 		if(arg0.getKeyCode() == KeyEvent.VK_F&&!view.isHasactive()){
 			wcview.FocusKeys();
-			view.repaint();
+			if(view.isHasrelateditems()){
+				view.setHasrelateditems(false);
+			}
+			view.recalculateArticles(wcview.getModel());
+	    	view.repaint();
+	    	wcview.draw();
 		}
 		if(arg0.getKeyCode() == KeyEvent.VK_D&&!view.isHasactive()){
 			wcview.removeKeys();
 			wcview.draw();
-			view.repaint();
+			view.recalculateArticles(wcview.getModel());
+	    	view.repaint();
 		}
 		if(arg0.getKeyCode() == KeyEvent.VK_R){
 			view.resetTreemap();
 			view.repaint();
 			
+		}
+		if(arg0.getKeyCode() == KeyEvent.VK_H){
+			if(view.isHidecolors()){
+				view.setHidecolors(false);
+			}
+			else{view.setHidecolors(true);}
+			view.repaint();
+		}
+		if(arg0.getKeyCode() == KeyEvent.VK_C){
+			view.generateColors();
+			view.repaint();
 		}
 	}
 

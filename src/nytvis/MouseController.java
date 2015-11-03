@@ -43,12 +43,18 @@ public class MouseController implements MouseListener, MouseMotionListener {
 			}
 			else{view.setHasactive(false);
 			view.setHasrelateditems(false);
+			wcview.getMarked().clear();
+			wcview.draw();
 			clicked=true;}
 			view.repaint();
 		}
 		else{
-			view.checkforLinehit(x0, y0);
+			
+			//view.checkforLinehit(x0, y0);
+			wcview.draw();
+			 
 			view.repaint();
+			
 		}
 		}
 		if(arg0.getComponent()==wcview){
@@ -58,7 +64,6 @@ public class MouseController implements MouseListener, MouseMotionListener {
 			int y = pane.getVerticalScrollBar().getValue();
 			JLabel active = (JLabel)arg0.getComponent().getComponentAt(x0, y0).getComponentAt(x0, y0).getComponentAt(x0,y0+y);
 			wcview.checkKeyList(active.getText());
-			
 			wcview.draw();
 			view.repaint();
 		}
@@ -93,14 +98,10 @@ public class MouseController implements MouseListener, MouseMotionListener {
 	}
 
 	public void mouseMoved(MouseEvent arg0) {
-		if(view.isTimeline()==false){
 		view.setToolText(arg0.getX(), arg0.getY());
-		ToolTipManager.sharedInstance().setEnabled(true);
 		ToolTipManager.sharedInstance().setDismissDelay(12000);
-		ToolTipManager.sharedInstance().registerComponent(view);}
-		else{
-			ToolTipManager.sharedInstance().setEnabled(false);
-		}
+		ToolTipManager.sharedInstance().registerComponent(view);
+	
 	}
 
 	public void setModel(Model model) {
